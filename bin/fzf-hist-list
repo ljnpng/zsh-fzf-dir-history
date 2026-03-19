@@ -1,0 +1,11 @@
+#!/bin/bash
+# Generate deduplicated history entries for fzf
+# Format: cmd\tcmd  dir_display\tfull_dir (field 1 search, field 2 display, field 3 hidden)
+hist="${ZFH_HISTORY_FILE:-$HOME/.zsh_dir_history}"
+LC_ALL=C tail -r "$hist" | LC_ALL=C awk -F'\t' '{
+  gsub(/[[:space:]]+$/, "", $2)
+} !seen[$1"\t"$2]++ {
+  n = split($1, a, "/")
+  dir = (n > 1 ? a[n-1] "/" a[n] : a[n])
+  printf "%s\t%s  \033[90m%s\033[0m\t%s\n", $2, $2, dir, $1
+}'

@@ -1,0 +1,11 @@
+#!/bin/bash
+# Delete a specific dir+cmd entry from history
+dir="$1"
+cmd="$2"
+hist="${ZFH_HISTORY_FILE:-$HOME/.zsh_dir_history}"
+export _DEL_DIR="$dir" _DEL_CMD="$cmd"
+LC_ALL=C awk -F'\t' '
+  BEGIN { d=ENVIRON["_DEL_DIR"]; c=ENVIRON["_DEL_CMD"]; gsub(/[[:space:]]+$/,"",c) }
+  d==$1 { f2=$2; gsub(/[[:space:]]+$/,"",f2); if (c==f2) next }
+  1
+' "$hist" > "${hist}.tmp" && mv "${hist}.tmp" "$hist"
