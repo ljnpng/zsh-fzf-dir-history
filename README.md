@@ -4,7 +4,7 @@ Directory-aware command history for Zsh, powered by [fzf](https://github.com/jun
 
 Standard Zsh history is global — you get the same results no matter where you are. This plugin records **which directory** each command was run in, and shows that context when you search with `Ctrl+R`.
 
-![demo](https://github.com/user-attachments/assets/placeholder)
+![demo](demo.gif)
 
 ## Features
 
