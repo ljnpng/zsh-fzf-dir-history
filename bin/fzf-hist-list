@@ -2,7 +2,8 @@
 # Generate deduplicated history entries for fzf
 # Format: cmd\tcmd  dir_display\tfull_dir (field 1 search, field 2 display, field 3 hidden)
 hist="${ZFH_HISTORY_FILE:-$HOME/.zsh_dir_history}"
-LC_ALL=C tail -r "$hist" | LC_ALL=C awk -F'\t' '{
+reverse() { if command -v tac >/dev/null; then tac; else tail -r; fi; }
+LC_ALL=C reverse < "$hist" | LC_ALL=C awk -F'\t' '{
   gsub(/[[:space:]]+$/, "", $2)
 } !seen[$1"\t"$2]++ {
   n = split($1, a, "/")
