@@ -16,7 +16,7 @@ Standard Zsh history is global — you get the same results no matter where you 
 ## Requirements
 
 - Zsh
-- [fzf](https://github.com/junegunn/fzf) (v0.60+)
+- [fzf](https://github.com/junegunn/fzf) (v0.74+)
 - awk (system default is fine)
 
 ## Install
@@ -70,6 +70,8 @@ export ZFH_BIND_KEY="^R"
 | `Ctrl+Y` | Copy selected command to clipboard |
 | `Ctrl+D` | Delete selected entry from history |
 | `Enter` | Insert command into prompt |
+
+`Ctrl+D` removes an entry from the list after the history file is updated. If the update fails, the entry remains and the header shows an error.
 
 ## How it works
 

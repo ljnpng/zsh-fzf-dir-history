@@ -53,6 +53,7 @@ zshaddhistory() {
 # --- Ctrl+R widget -----------------------------------------------------------
 fzf-dir-history-widget() {
   local selected
+  local history_header='⌃Y copy · ⌃D delete'
   local delete_command="ZFH_HISTORY_FILE=${(q)_cmd_dir_history} ${(q)_ZFH_DIR}/bin/fzf-hist-delete"
   selected=$(ZFH_HISTORY_FILE="$_cmd_dir_history" "$_ZFH_DIR/bin/fzf-hist-list" | \
     fzf --ansi --delimiter='\t' \
@@ -61,9 +62,16 @@ fzf-dir-history-widget() {
         --no-preview \
         --scheme=history \
         --exact \
-        --header '⌃Y copy · ⌃D delete' \
+        --header "$history_header" \
         --bind "ctrl-y:execute-silent(echo -n {1} | pbcopy)+abort" \
-        --bind "ctrl-d:exclude+execute-silent($delete_command {3} {1})" | \
+        --bind "ctrl-d:wait+transform(
+          [ \"\$FZF_MATCH_COUNT\" -gt 0 ] || exit 0
+          if $delete_command {3} {1}; then
+            printf '%s\n' 'exclude+change-header($history_header)'
+          else
+            printf '%s\n' 'change-header(Delete failed · ⌃D retry)'
+          fi
+        )" | \
     cut -f1)
   if [[ -n "$selected" ]]; then
     LBUFFER="$selected"
