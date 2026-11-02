@@ -19,6 +19,11 @@ fi
 # --- Configuration (override via env vars before sourcing) -------------------
 : ${ZFH_HISTORY_FILE:="$HOME/.zsh_dir_history"}
 : ${ZFH_BIND_KEY:="^R"}
+: ${ZFH_TOGGLE_SCOPE_KEY:="ctrl-s"}
+: ${ZFH_CD_INSERT_KEY:="ctrl-j"}
+: ${ZFH_INSERT_KEY:="enter"}
+: ${ZFH_COPY_KEY:="ctrl-y"}
+: ${ZFH_DELETE_KEY:="ctrl-d"}
 
 # --- FZF default options (only set if user hasn't customized) ----------------
 if [[ -z "$FZF_DEFAULT_OPTS" ]]; then
@@ -28,7 +33,6 @@ if [[ -z "$FZF_DEFAULT_OPTS" ]]; then
     --border
     --inline-info
     --exact
-    --bind 'ctrl-y:execute-silent(echo -n {} | pbcopy)+abort'
   "
 fi
 
@@ -52,9 +56,13 @@ zshaddhistory() {
 
 # --- Ctrl+R widget -----------------------------------------------------------
 fzf-dir-history-widget() {
-  local selected
-  local history_header='⌃Y copy · ⌃D delete'
+  local selected selected_key selected_entry selected_command selected_directory
+  local history_header="$ZFH_TOGGLE_SCOPE_KEY all/current · $ZFH_CD_INSERT_KEY cd+insert · $ZFH_COPY_KEY copy · $ZFH_DELETE_KEY delete"
+  history_header="${history_header//ctrl-/^}"
   local delete_command="ZFH_HISTORY_FILE=${(q)_cmd_dir_history} ${(q)_ZFH_DIR}/bin/fzf-hist-delete"
+  local list_command="ZFH_HISTORY_FILE=${(q)_cmd_dir_history} ${(q)_ZFH_DIR}/bin/fzf-hist-list"
+  local -x _ZFH_ALL_HISTORY_COMMAND="$list_command"
+  local -x _ZFH_CURRENT_HISTORY_COMMAND="$list_command ${(q)PWD}"
   selected=$(ZFH_HISTORY_FILE="$_cmd_dir_history" "$_ZFH_DIR/bin/fzf-hist-list" | \
     fzf --ansi --delimiter='\t' \
         --with-nth=2 \
@@ -62,20 +70,42 @@ fzf-dir-history-widget() {
         --no-preview \
         --scheme=history \
         --exact \
+        --prompt 'All> ' \
+        --expect="$ZFH_INSERT_KEY,$ZFH_CD_INSERT_KEY" \
         --header "$history_header" \
-        --bind "ctrl-y:execute-silent(echo -n {1} | pbcopy)+abort" \
-        --bind "ctrl-d:wait+transform(
+        --bind "${ZFH_TOGGLE_SCOPE_KEY}:transform:
+          if [ \"\$FZF_PROMPT\" = 'All> ' ]; then
+            printf '%s\n' \"change-prompt(Current dir> )+reload(\$_ZFH_CURRENT_HISTORY_COMMAND)\"
+          else
+            printf '%s\n' \"change-prompt(All> )+reload(\$_ZFH_ALL_HISTORY_COMMAND)\"
+          fi
+        " \
+        --bind "${ZFH_COPY_KEY}:execute-silent(echo -n {1} | pbcopy)+abort" \
+        --bind "${ZFH_DELETE_KEY}:wait+transform(
           [ \"\$FZF_MATCH_COUNT\" -gt 0 ] || exit 0
           if $delete_command {3} {1}; then
             printf '%s\n' 'exclude+change-header($history_header)'
           else
-            printf '%s\n' 'change-header(Delete failed · ⌃D retry)'
+            printf '%s\n' 'change-header(Delete failed · $ZFH_DELETE_KEY retry)'
           fi
-        )" | \
-    cut -f1)
-  if [[ -n "$selected" ]]; then
-    LBUFFER="$selected"
+        )")
+  if [[ -z "$selected" ]]; then
+    zle reset-prompt
+    return
   fi
+
+  selected_key=${selected%%$'\n'*}
+  selected_entry=${selected#*$'\n'}
+  selected_command=${selected_entry%%$'\t'*}
+  selected_directory=${selected_entry##*$'\t'}
+
+  if [[ "$selected_key" == "$ZFH_CD_INSERT_KEY" ]] && ! builtin cd -- "$selected_directory"; then
+    zle -M "Cannot change directory: $selected_directory"
+    zle reset-prompt
+    return 1
+  fi
+
+  LBUFFER="$selected_command"
   zle reset-prompt
 }
 zle -N fzf-dir-history-widget
