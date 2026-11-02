@@ -53,7 +53,8 @@ zshaddhistory() {
 # --- Ctrl+R widget -----------------------------------------------------------
 fzf-dir-history-widget() {
   local selected
-  selected=$(ZFH_HISTORY_FILE="$_cmd_dir_history" fzf-hist-list | \
+  local delete_command="ZFH_HISTORY_FILE=${(q)_cmd_dir_history} ${(q)_ZFH_DIR}/bin/fzf-hist-delete"
+  selected=$(ZFH_HISTORY_FILE="$_cmd_dir_history" "$_ZFH_DIR/bin/fzf-hist-list" | \
     fzf --ansi --delimiter='\t' \
         --with-nth=2 \
         --nth=1 \
@@ -62,7 +63,7 @@ fzf-dir-history-widget() {
         --exact \
         --header '⌃Y copy · ⌃D delete' \
         --bind "ctrl-y:execute-silent(echo -n {1} | pbcopy)+abort" \
-        --bind "ctrl-d:execute-silent(ZFH_HISTORY_FILE=\"$_cmd_dir_history\" fzf-hist-delete {3} {1})+reload(ZFH_HISTORY_FILE=\"$_cmd_dir_history\" fzf-hist-list)" | \
+        --bind "ctrl-d:exclude+execute-silent($delete_command {3} {1})" | \
     cut -f1)
   if [[ -n "$selected" ]]; then
     LBUFFER="$selected"

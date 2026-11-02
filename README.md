@@ -16,7 +16,7 @@ Standard Zsh history is global — you get the same results no matter where you 
 ## Requirements
 
 - Zsh
-- [fzf](https://github.com/junegunn/fzf) (v0.30+)
+- [fzf](https://github.com/junegunn/fzf) (v0.60+)
 - awk (system default is fine)
 
 ## Install
