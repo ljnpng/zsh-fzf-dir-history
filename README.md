@@ -89,6 +89,7 @@ The picker starts with all history. Current directory filtering uses the exact d
 The command is not executed. If changing directory fails, the prompt content is preserved.
 
 `Ctrl+D` removes an entry from the list after the history file is updated. If the update fails, the entry remains and the header shows an error.
+Deletion uses an encoded source record so commands containing invalid UTF-8 bytes or ANSI escapes can still be removed.
 
 ## How it works
 

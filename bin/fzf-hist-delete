@@ -4,8 +4,29 @@ dir="$1"
 cmd="$2"
 hist="${ZFH_HISTORY_FILE:-$HOME/.zsh_dir_history}"
 export _DEL_DIR="$dir" _DEL_CMD="$cmd"
-LC_ALL=C awk -F'\t' '
-  BEGIN { d=ENVIRON["_DEL_DIR"]; c=ENVIRON["_DEL_CMD"]; gsub(/[[:space:]]+$/,"",c) }
-  d==$1 { f2=$2; gsub(/[[:space:]]+$/,"",f2); if (c==f2) next }
+export _DEL_RECORD="${3-}"
+if LC_ALL=C awk -F'\t' '
+  BEGIN {
+    d = ENVIRON["_DEL_DIR"]; c = ENVIRON["_DEL_CMD"]
+    encoded_record = ENVIRON["_DEL_RECORD"]
+    if (encoded_record != "") {
+      for (byte = 0; byte < 256; byte++) bytes[sprintf("%02x", byte)] = sprintf("%c", byte)
+      for (position = 1; position <= length(encoded_record); position += 2)
+        record = record bytes[substr(encoded_record, position, 2)]
+      split(record, fields, "\t")
+      d = fields[1]; c = fields[2]
+    }
+    gsub(/[[:space:]]+$/, "", c)
+  }
+  d==$1 {
+    f2=$2; gsub(/[[:space:]]+$/,"",f2)
+    if (c==f2) { deleted = 1; next }
+  }
   1
-' "$hist" > "${hist}.tmp" && mv "${hist}.tmp" "$hist"
+  END { if (!deleted) exit 1 }
+' "$hist" > "${hist}.tmp"; then
+  mv "${hist}.tmp" "$hist"
+else
+  rm -f "${hist}.tmp"
+  exit 1
+fi

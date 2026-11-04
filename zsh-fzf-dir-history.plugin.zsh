@@ -83,7 +83,7 @@ fzf-dir-history-widget() {
         --bind "${ZFH_COPY_KEY}:execute-silent(echo -n {1} | pbcopy)+abort" \
         --bind "${ZFH_DELETE_KEY}:wait+transform(
           [ \"\$FZF_MATCH_COUNT\" -gt 0 ] || exit 0
-          if $delete_command {3} {1}; then
+          if $delete_command {3} {1} {4}; then
             printf '%s\n' 'exclude+change-header($history_header)'
           else
             printf '%s\n' 'change-header(Delete failed · $ZFH_DELETE_KEY retry)'
@@ -97,6 +97,7 @@ fzf-dir-history-widget() {
   selected_key=${selected%%$'\n'*}
   selected_entry=${selected#*$'\n'}
   selected_command=${selected_entry%%$'\t'*}
+  selected_entry=${selected_entry%$'\t'*}
   selected_directory=${selected_entry##*$'\t'}
 
   if [[ "$selected_key" == "$ZFH_CD_INSERT_KEY" ]] && ! builtin cd -- "$selected_directory"; then
